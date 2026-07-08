@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ZCode — Research Brief</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#0B0C0E;
+    --panel:#15171A;
+    --inset:#1B1D20;
+    --border:#2A2D31;
+    --text:#E9E6DE;
+    --dim:#8B9098;
+    --mono-dim:#5C6167;
+    --green:#5FD97A;
+    --green-dim:#2E4A34;
+    --red:#FF6B5E;
+    --red-dim:#4A2E2C;
+    --amber:#F2B84C;
+    --blue:#6FA8FF;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--void);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    font-size:16px;
+    line-height:1.6;
+  }
+  ::selection{background:var(--green-dim);color:var(--green);}
+
+  .display{font-family:'Fraunces',serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+
+  a{color:var(--blue);}
+
+  /* ---- titlebar ---- */
+  .titlebar{
+    position:sticky; top:0; z-index:50;
+    background:var(--panel);
+    border-bottom:1px solid var(--border);
+  }
+  .titlebar-top{
+    display:flex; align-items:center; gap:10px;
+    padding:10px 20px;
+    border-bottom:1px solid var(--border);
+  }
+  .dots{display:flex; gap:7px;}
+  .dot{width:11px;height:11px;border-radius:50%;}
+  .dot.r{background:#FF5F57;}
+  .dot.y{background:#FEBC2E;}
+  .dot.g{background:#28C840;}
+  .filename{
+    margin-left:8px; font-size:12.5px; color:var(--dim);
+  }
+  .filename b{color:var(--text); font-weight:500;}
+  .tabbar{
+    display:flex; overflow-x:auto; scrollbar-width:none;
+  }
+  .tabbar::-webkit-scrollbar{display:none;}
+  .tabbar a{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12.5px;
+    color:var(--dim);
+    text-decoration:none;
+    padding:9px 16px;
+    border-right:1px solid var(--border);
+    white-space:nowrap;
+  }
+  .tabbar a:hover{color:var(--text); background:var(--inset);}
+  .tabbar a.active{color:var(--green);}
+
+  /* ---- page shell with gutter ---- */
+  .page{max-width:980px; margin:0 auto; padding:0 24px;}
+
+  /* ---- hero ---- */
+  .hero{padding:64px 0 40px; border-bottom:1px solid var(--border);}
+  .hero-eyebrow{
+    font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--mono-dim);
+    margin-bottom:18px;
+  }
+  .terminal{
+    background:var(--inset); border:1px solid var(--border); border-radius:6px;
+    padding:16px 18px; font-family:'JetBrains Mono',monospace; font-size:13.5px;
+    color:var(--green); margin-bottom:30px; max-width:560px;
+  }
+  .terminal .prompt{color:var(--dim);}
+  .caret{display:inline-block;width:7px;height:14px;background:var(--green);vertical-align:-2px;
+    animation:blink 1s steps(2) infinite;}
+  @media (prefers-reduced-motion: reduce){.caret{animation:none;}}
+  @keyframes blink{50%{opacity:0;}}
+
+  .hero h1{
+    font-size:clamp(2.2rem, 5vw, 3.4rem);
+    font-weight:500; line-height:1.08; margin:0 0 20px;
+    max-width:820px;
+  }
+  .hero h1 em{font-style:italic; color:var(--green);}
+  .hero p.lede{
+    font-size:1.08rem; color:var(--dim); max-width:640px; margin:0;
+  }
+
+  /* ---- section scaffolding ---- */
+  section{padding:52px 0; border-bottom:1px solid var(--border);}
+  .hunk-header{
+    font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--blue);
+    background:rgba(111,168,255,0.08); border:1px solid rgba(111,168,255,0.25);
+    display:inline-block; padding:3px 10px; border-radius:4px; margin-bottom:18px;
+  }
+  h2{
+    font-family:'Fraunces',serif; font-weight:500; font-size:1.9rem; margin:0 0 8px;
+  }
+  .section-sub{color:var(--dim); font-size:0.98rem; margin:0 0 30px; max-width:640px;}
+
+  /* ---- diff lines ---- */
+  .diff{
+    background:var(--inset); border:1px solid var(--border); border-radius:6px;
+    overflow:hidden; font-family:'JetBrains Mono',monospace; font-size:13.5px;
+  }
+  .dline{
+    display:grid; grid-template-columns:34px 18px 1fr; gap:0;
+    padding:6px 14px; border-bottom:1px solid rgba(255,255,255,0.04);
+  }
+  .dline:last-child{border-bottom:none;}
+  .dline .num{color:var(--mono-dim); text-align:right; padding-right:12px; user-select:none;}
+  .dline .sign{font-weight:700;}
+  .dline.add{background:rgba(95,217,122,0.06);}
+  .dline.add .sign{color:var(--green);}
+  .dline.rem{background:rgba(255,107,94,0.06);}
+  .dline.rem .sign{color:var(--red);}
+  .dline.ctx .sign{color:var(--mono-dim);}
+  .dline .content{color:var(--text);}
+  .dline.rem .content{color:#C7A6A2; text-decoration:line-through; text-decoration-color:rgba(255,107,94,0.4);}
+  .dline .content .k{color:var(--amber);}
+
+  /* ---- feature grid ---- */
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:8px;}
+  @media (max-width:720px){.grid2{grid-template-columns:1fr;}}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:18px 20px;
+  }
+  .card .tag{
+    font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--amber);
+    text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px; display:block;
+  }
+  .card h3{margin:0 0 8px; font-size:1.05rem; font-weight:600; font-family:'Inter',sans-serif;}
+  .card p{margin:0; color:var(--dim); font-size:0.94rem;}
+
+  .modes{list-style:none; margin:20px 0 0; padding:0; display:grid; gap:8px;}
+  .modes li{
+    font-family:'JetBrains Mono',monospace; font-size:13px;
+    background:var(--panel); border:1px solid var(--border); border-radius:5px;
+    padding:9px 14px; display:flex; gap:10px; align-items:baseline;
+  }
+  .modes li .flag{color:var(--green); width:16px;}
+  .modes li .name{color:var(--text); font-weight:700; min-width:150px;}
+  .modes li .desc{color:var(--dim); font-family:'Inter',sans-serif; font-size:13.5px;}
+
+  /* ---- pricing ---- */
+  .price-row{
+    display:grid; grid-template-columns:110px 1fr 90px; gap:16px; align-items:center;
+    font-family:'JetBrains Mono',monospace; font-size:13.5px;
+    padding:14px 16px; border-bottom:1px solid var(--border);
+  }
+  .price-row:last-child{border-bottom:none;}
+  .price-row .plan{color:var(--green); font-weight:700;}
+  .price-row .desc{color:var(--dim); font-family:'Inter',sans-serif; font-size:13.5px;}
+  .price-row .cost{text-align:right; color:var(--text);}
+  .price-block{background:var(--inset); border:1px solid var(--border); border-radius:6px; overflow:hidden;}
+  .price-note{
+    margin-top:14px; font-size:13px; color:var(--dim); padding:12px 16px;
+    background:rgba(242,184,76,0.06); border:1px solid rgba(242,184,76,0.25); border-radius:6px;
+  }
+  .price-note b{color:var(--amber);}
+
+  /* ---- comparison table ---- */
+  .table-wrap{overflow-x:auto; border:1px solid var(--border); border-radius:6px;}
+  table{border-collapse:collapse; width:100%; min-width:920px; font-family:'JetBrains Mono',monospace; font-size:12.5px;}
+  thead th{
+    position:sticky; top:79px; background:var(--panel); z-index:5;
+    text-align:left; padding:12px 14px; color:var(--amber);
+    border-bottom:1px solid var(--border); font-weight:700; white-space:nowrap;
+  }
+  tbody td{padding:12px 14px; border-bottom:1px solid var(--border); vertical-align:top; color:var(--text);}
+  tbody tr:nth-child(even){background:rgba(255,255,255,0.015);}
+  tbody tr.zcode{background:rgba(95,217,122,0.05);}
+  tbody tr.zcode td:first-child{border-left:2px solid var(--green);}
+  td.tool{color:var(--green); font-weight:700; white-space:nowrap;}
+  tbody tr:not(.zcode) td.tool{color:var(--text);}
+  .dot-i{font-size:14px;}
+  .dot-full{color:var(--green);}
+  .dot-part{color:var(--amber);}
+  .dot-none{color:var(--red);}
+  .cell-sub{color:var(--dim); font-size:11.5px; display:block; margin-top:2px;}
+
+  /* ---- market context ---- */
+  .callout{
+    display:flex; gap:14px; padding:16px 18px; border-radius:6px; margin-top:20px;
+    background:var(--panel); border:1px solid var(--border);
+  }
+  .callout .icn{font-family:'JetBrains Mono',monospace; color:var(--red); font-weight:700;}
+  .callout p{margin:0; font-size:0.93rem; color:var(--dim);}
+  .callout p b{color:var(--text);}
+
+  /* ---- verdict / footer ---- */
+  footer{padding:52px 0 80px;}
+  .verdict{
+    background:linear-gradient(180deg, var(--panel), var(--inset));
+    border:1px solid var(--border); border-radius:8px; padding:28px 30px;
+  }
+  .verdict h2{margin-bottom:14px;}
+  .verdict ul{margin:14px 0 0; padding-left:18px; color:var(--dim); font-size:0.95rem;}
+  .verdict ul li{margin-bottom:6px;}
+  .sources{margin-top:40px; font-size:12.5px; color:var(--mono-dim); font-family:'JetBrains Mono',monospace;}
+  .sources summary{cursor:pointer; color:var(--dim); margin-bottom:10px;}
+  .sources div{line-height:1.9;}
+
+  @media (max-width:640px){
+    .hero{padding:44px 0 32px;}
+    section{padding:38px 0;}
+    .dline{grid-template-columns:24px 14px 1fr; font-size:12px;}
+    thead th{top:71px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="titlebar">
+  <div class="titlebar-top">
+    <div class="dots"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
+    <div class="filename">crm/research · <b>zcode_research.diff</b></div>
+  </div>
+  <nav class="tabbar">
+    <a href="#overview" class="active">overview</a>
+    <a href="#model">model</a>
+    <a href="#features">features</a>
+    <a href="#pricing">pricing</a>
+    <a href="#compare">compare</a>
+    <a href="#market">market</a>
+    <a href="#verdict">verdict</a>
+  </nav>
+</div>
+
+<div class="page">
+
+  <div class="hero">
+    <div class="hero-eyebrow">RESEARCH BRIEF · SUBMITTED TO CRM · JUL 08 2026</div>
+    <div class="terminal">
+      <span class="prompt">$</span> zcode --version<br>
+      ZCode 1.0 — official harness for GLM-5.2<br>
+      <span class="prompt">$</span> zcode explore --target=self<span class="caret"></span>
+    </div>
+    <h1>ZCode ships an <em>agent</em>,<br>not an editor.</h1>
+    <p class="lede">Z.ai's new Agentic Development Environment (ADE) skips the "assistant in a sidebar" model entirely. You hand it a goal; it drives the file edits, terminal, git, and browser preview itself. This brief covers what it is, what it costs, and how it actually stacks up against the six tools it's being measured against.</p>
+  </div>
+
+  <!-- OVERVIEW -->
+  <section id="overview">
+    <div class="hunk-header">@@ -1,6 +1,9 @@ &nbsp;editor.workflow</div>
+    <h2>What ZCode is</h2>
+    <p class="section-sub">The core pitch is a shift in who drives. A traditional IDE waits for keystrokes; ZCode's agent takes a natural-language goal and keeps working across a whole task thread.</p>
+    <div class="diff">
+      <div class="dline rem"><span class="num">01</span><span class="sign">−</span><span class="content">you open a file, make an edit, save, repeat</span></div>
+      <div class="dline rem"><span class="num">02</span><span class="sign">−</span><span class="content">context resets every time you switch tasks</span></div>
+      <div class="dline ctx"><span class="num">03</span><span class="sign">&nbsp;</span><span class="content">a code editor is the primary surface</span></div>
+      <div class="dline add"><span class="num">04</span><span class="sign">+</span><span class="content">you describe a <span class="k">goal</span>, the agent drives files, terminal, git, preview</span></div>
+      <div class="dline add"><span class="num">05</span><span class="sign">+</span><span class="content">workspace state, git branch context, and task memory persist</span></div>
+      <div class="dline add"><span class="num">06</span><span class="sign">+</span><span class="content">workspace can run over <span class="k">SSH</span> or inside a <span class="k">Docker</span> container</span></div>
+      <div class="dline add"><span class="num">07</span><span class="sign">+</span><span class="content">the agent is the primary surface — editing is secondary</span></div>
+    </div>
+    <p style="margin-top:18px; color:var(--dim); font-size:0.95rem; max-width:640px;">Z.ai frames this as long-horizon execution: the agent recovers progress across a session rather than starting cold each time. It's a desktop app for macOS, Windows, and a Linux beta, and it's marketed explicitly as the "official" way to bring the GLM-5.2 model family into a coding workflow — not a general-purpose editor that happens to support one more model.</p>
+  </section>
+
+  <!-- MODEL -->
+  <section id="model">
+    <div class="hunk-header">@@ -1,4 +1,11 @@ &nbsp;config/model.json</div>
+    <h2>The model stack</h2>
+    <p class="section-sub">GLM-5.2 is the default and the reason ZCode exists — but the door to other models is deliberately left open.</p>
+    <div class="grid2">
+      <div class="card">
+        <span class="tag">Default</span>
+        <h3>GLM-5.2 by Z.ai</h3>
+        <p>The agent is described as purpose-tuned for GLM-5.2's long-context and long-horizon behavior. GLM-5-Turbo is available as a lighter option depending on account tier.</p>
+      </div>
+      <div class="card">
+        <span class="tag">BYOK</span>
+        <h3>Bring your own key</h3>
+        <p>Provider settings accept a custom API key and base URL, with Anthropic-compatible and OpenAI-compatible connection modes. Claude and DeepSeek endpoints are given as worked examples in the docs.</p>
+      </div>
+    </div>
+    <div class="diff" style="margin-top:16px;">
+      <div class="dline ctx"><span class="num">01</span><span class="sign">&nbsp;</span><span class="content">"provider": "z.ai" | "bigmodel" | <span class="k">"custom-api-key"</span></span></div>
+      <div class="dline add"><span class="num">02</span><span class="sign">+</span><span class="content">"model": <span class="k">"glm-5.2"</span>  <span style="color:var(--dim)">// default, long-context, agentic tuning</span></span></div>
+      <div class="dline add"><span class="num">03</span><span class="sign">+</span><span class="content">"model": <span class="k">"glm-5-turbo"</span>  <span style="color:var(--dim)">// lighter tier</span></span></div>
+      <div class="dline add"><span class="num">04</span><span class="sign">+</span><span class="content">"external": [<span class="k">"claude"</span>, <span class="k">"deepseek"</span>]  <span style="color:var(--dim)">// via BYOK base_url + key</span></span></div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section id="features">
+    <div class="hunk-header">@@ -4,2 +4,14 @@ &nbsp;capabilities</div>
+    <h2>Key features &amp; use cases</h2>
+    <p class="section-sub">Everything is oriented around trust and autonomy — how much rope you give the agent, and how it proves what it did.</p>
+    <ul class="modes">
+      <li><span class="flag">●</span><span class="name">Default Mode</span><span class="desc">Balanced — the agent proposes, you can interrupt anytime.</span></li>
+      <li><span class="flag">●</span><span class="name">Confirm Before Changes</span><span class="desc">Every file edit needs a nod first. Best for unfamiliar codebases.</span></li>
+      <li><span class="flag">●</span><span class="name">Auto Edit</span><span class="desc">The agent edits without asking, still stops for risky terminal commands.</span></li>
+      <li><span class="flag">●</span><span class="name">Plan Mode</span><span class="desc">Produces a task plan first, execution second — good for reviewable scope.</span></li>
+      <li><span class="flag">●</span><span class="name">Full Access</span><span class="desc">Maximum autonomy across files, terminal, and git. For trusted, sandboxed work.</span></li>
+    </ul>
+    <div class="grid2" style="margin-top:24px;">
+      <div class="card">
+        <span class="tag">Reference syntax</span>
+        <h3>@ files · / commands · $ skills</h3>
+        <p>Shorthand for pulling a file into context, running a reusable command, or invoking a saved skill mid-task.</p>
+      </div>
+      <div class="card">
+        <span class="tag">Remote dev</span>
+        <h3>SSH &amp; Docker workspaces</h3>
+        <p>The agent can operate directly inside a remote host or container while the desktop app stays local — a genuine differentiator versus most cloud-only competitors.</p>
+      </div>
+      <div class="card">
+        <span class="tag">Continuity</span>
+        <h3>Goal Mode</h3>
+        <p>Keeps objective state across a long task, recovering progress instead of restarting when a session breaks.</p>
+      </div>
+      <div class="card">
+        <span class="tag">Fit</span>
+        <h3>Best for</h3>
+        <p>Multi-file feature work, debugging, refactors, test-writing, and review — anywhere a shell, git, or container workflow already exists. No published language whitelist.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section id="pricing">
+    <div class="hunk-header">@@ -1,3 +1,8 @@ &nbsp;billing/plans.yaml</div>
+    <h2>Pricing</h2>
+    <p class="section-sub">The app itself is free. What you pay for is model access — either through Z.ai's GLM Coding Plan or your own BYOK provider bill.</p>
+    <div class="price-block">
+      <div class="price-row"><span class="plan">App</span><span class="desc">ZCode desktop application — free, no seat cost</span><span class="cost">$0</span></div>
+      <div class="price-row"><span class="plan">Lite</span><span class="desc">Entry GLM Coding Plan tier</span><span class="cost">~$16–18/mo</span></div>
+      <div class="price-row"><span class="plan">Pro</span><span class="desc">~5× Lite usage</span><span class="cost">~$65/mo</span></div>
+      <div class="price-row"><span class="plan">Max</span><span class="desc">~20× Lite usage</span><span class="cost">~$144/mo</span></div>
+    </div>
+    <div class="price-note">Reported figures vary slightly between Z.ai's own pricing page and launch coverage (roughly $16.20–$18 for the entry tier). New accounts reportedly get a 5-day trial of 5M tokens/day, split across GLM-5.2 and GLM-5-Turbo. <b>Treat exact numbers as directional</b> until checked against the live pricing page before this goes external.</div>
+  </section>
+
+  <!-- COMPARISON -->
+  <section id="compare">
+    <div class="hunk-header">@@ -1,7 +1,7 @@ &nbsp;compare.table</div>
+    <h2>ZCode vs. the field</h2>
+    <p class="section-sub">● full support &nbsp; ◐ partial / conditional &nbsp; ○ not supported. Pricing shown is entry → top self-serve tier.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Tool</th>
+            <th>Core LLM</th>
+            <th>Entry → top price</th>
+            <th>Agent capability</th>
+            <th>Offline</th>
+            <th>BYOK</th>
+            <th>Ease of use</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="zcode">
+            <td class="tool">ZCode</td>
+            <td>GLM-5.2 default<span class="cell-sub">GLM-5-Turbo option</span></td>
+            <td>Free app<span class="cell-sub">Lite $16–18 → Max $144</span></td>
+            <td>Agent-first ADE<span class="cell-sub">goal mode, remote SSH/Docker</span></td>
+            <td><span class="dot-i dot-part">◐</span><span class="cell-sub">remote-workspace focused</span></td>
+            <td><span class="dot-i dot-full">●</span><span class="cell-sub">Claude, DeepSeek examples</span></td>
+            <td>Moderate<span class="cell-sub">agent-centric, new</span></td>
+          </tr>
+          <tr>
+            <td class="tool">Cursor</td>
+            <td>Multi-model<span class="cell-sub">Claude, GPT, Gemini — no fixed default</span></td>
+            <td>Free Hobby<span class="cell-sub">Ultra $200/mo</span></td>
+            <td>Strong<span class="cell-sub">background agents, Composer</span></td>
+            <td><span class="dot-i dot-none">○</span></td>
+            <td><span class="dot-i dot-part">◐</span><span class="cell-sub">model choice, not a raw key</span></td>
+            <td>Easy<span class="cell-sub">most polished onboarding</span></td>
+          </tr>
+          <tr>
+            <td class="tool">VS Code</td>
+            <td>None built-in<span class="cell-sub">Copilot or extensions</span></td>
+            <td>Free<span class="cell-sub">Copilot billed separately</span></td>
+            <td>Depends on extension</td>
+            <td><span class="dot-i dot-full">●</span><span class="cell-sub">core editor is fully local</span></td>
+            <td><span class="dot-i dot-full">●</span><span class="cell-sub">via extensions</span></td>
+            <td>Easy<span class="cell-sub">universal, huge ecosystem</span></td>
+          </tr>
+          <tr>
+            <td class="tool">Windsurf</td>
+            <td>SWE-1.6 default<span class="cell-sub">Claude / GPT selectable</span></td>
+            <td>Free<span class="cell-sub">Max $200/mo</span></td>
+            <td>Strong<span class="cell-sub">Cascade + cloud Devin agent</span></td>
+            <td><span class="dot-i dot-none">○</span></td>
+            <td><span class="dot-i dot-part">◐</span><span class="cell-sub">Free/Pro only, not Teams/Enterprise</span></td>
+            <td>Easy–moderate<span class="cell-sub">now rebranded Devin Desktop</span></td>
+          </tr>
+          <tr>
+            <td class="tool">Codex</td>
+            <td>GPT-5.x family</td>
+            <td>Bundled in ChatGPT<span class="cell-sub">Plus $20 → Pro 20x $200</span></td>
+            <td>Strong<span class="cell-sub">cloud sandboxed tasks, CLI+web+IDE</span></td>
+            <td><span class="dot-i dot-none">○</span><span class="cell-sub">CLI is local, execution calls the API</span></td>
+            <td><span class="dot-i dot-full">●</span><span class="cell-sub">CLI supports raw API key</span></td>
+            <td>Moderate<span class="cell-sub">CLI/terminal-first</span></td>
+          </tr>
+          <tr>
+            <td class="tool">VSCodium</td>
+            <td>None built-in</td>
+            <td>Free</td>
+            <td>None natively<span class="cell-sub">community extensions add it</span></td>
+            <td><span class="dot-i dot-full">●</span><span class="cell-sub">fully offline via Ollama/local models</span></td>
+            <td><span class="dot-i dot-full">●</span><span class="cell-sub">fully open, any provider or local</span></td>
+            <td>Easy editor<span class="cell-sub">DIY for AI features</span></td>
+          </tr>
+          <tr>
+            <td class="tool">Antigravity</td>
+            <td>Gemini 3.x/3.5 default<span class="cell-sub">Claude Sonnet/Opus, GPT-OSS options</span></td>
+            <td>Free tier<span class="cell-sub">Ultra $100–$249/mo</span></td>
+            <td>Strong<span class="cell-sub">multi-agent Mission Control, browser subagent</span></td>
+            <td><span class="dot-i dot-none">○</span><span class="cell-sub">offline on roadmap only</span></td>
+            <td><span class="dot-i dot-full">●</span><span class="cell-sub">multi-model incl. Claude, GPT-OSS</span></td>
+            <td>Moderate<span class="cell-sub">ambitious, reported quota instability</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- MARKET -->
+  <section id="market">
+    <div class="hunk-header">@@ -1,2 +1,5 @@ &nbsp;notes/market.md</div>
+    <h2>Why this is being watched</h2>
+    <p class="section-sub">ZCode is only days old, and the strongest claims about it need a second look before they go in front of anyone external.</p>
+    <div class="callout">
+      <span class="icn">!</span>
+      <p><b>"#2 on Code Arena"</b> most likely refers to a human-preference, blind-vote leaderboard rather than a fixed benchmark suite. That's a real signal of developer preference in head-to-head comparisons, but it isn't proof of superiority on every task — worth stating precisely rather than as a bare ranking claim.</p>
+    </div>
+    <div class="callout">
+      <span class="icn">!</span>
+      <p>Reception evidence so far is <b>launch-adjacent</b> — creator walkthroughs and Z.ai's own docs — not a broad base of independent reviews. That's expected for a product days old; it just means the "widely praised" framing should wait for more independent coverage.</p>
+    </div>
+  </section>
+
+  <footer id="verdict">
+    <div class="verdict">
+      <h2>Bottom line</h2>
+      <p style="color:var(--dim); max-width:680px;">ZCode's positioning is real, not just marketing: it's genuinely built agent-first, GLM-5.2 is a legitimate long-context model backing it, and BYOK plus remote SSH/Docker workspaces are concrete differentiators — Cursor and Windsurf don't offer that same remote-first workflow, and VS Code/VSCodium need extensions to get anywhere close. The open questions are ordinary "new product" questions: exact live pricing, and independent evidence of the Code Arena ranking.</p>
+      <ul>
+        <li>Verify current pricing directly at the live GLM Coding Plan page before quoting numbers externally.</li>
+        <li>Pull a current Code Arena leaderboard snapshot rather than relying on a single reported rank.</li>
+        <li>Note in any external-facing version that Windsurf now ships under the name <b style="color:var(--text)">Devin Desktop</b> following Cognition's 2025 acquisition.</li>
+      </ul>
+    </div>
+
+    <details class="sources">
+      <summary>sources referenced in this brief</summary>
+      <div>
+        zcode.z.ai/en · z.ai pricing &amp; docs · cursor.com/pricing · windsurf.com/changelog · devin.ai/desktop ·
+        developers.openai.com/codex/pricing · antigravity.google/blog · github.com/VSCodium/vscodium (discussions) ·
+        plus independent 2026 coverage from eesel.ai, flexprice.io, uibakery.io, morphllm.com, vibecoding.app, aicoderscope.com, apidog.com
+      </div>
+    </details>
+  </footer>
+
+</div>
+
+<script>
+  const links = document.querySelectorAll('.tabbar a');
+  const sections = document.querySelectorAll('section, footer#verdict');
+  const map = {overview:'overview',model:'model',features:'features',pricing:'pricing',compare:'compare',market:'market',verdict:'verdict'};
+  window.addEventListener('scroll', () => {
+    let current = 'overview';
+    sections.forEach(s => { if (window.scrollY + 100 >= s.offsetTop) current = s.id; });
+    links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + current));
+  });
+</script>
+
+</body>
+</html>
